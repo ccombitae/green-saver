@@ -1,7 +1,19 @@
 import mariadb
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from datetime import datetime
 
-app = FastAPI()
+app = FastAPI(title="Green Saver API", version="1.0.0")
+
+# ===== CORS CONFIGURATION =====
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Cambiar a dominios específicos en producción
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Conexión a MariaDB
 DB_HOST = "localhost"
@@ -20,6 +32,105 @@ try:
     cursor = conn.cursor(dictionary=True)  # devuelve resultados como dict
 except mariadb.Error as e:
     print(f"Error conectando a MariaDB: {e}")
+
+# ===== MODELOS PYDANTIC =====
+class UsuarioRegistro(BaseModel):
+    name: str
+    phone: str
+    email: str
+    password: str
+    role: str = "user"
+
+class UsuarioLogin(BaseModel):
+    email: str
+    password: str
+
+class CalculoCrear(BaseModel):
+    email: str
+    consumption: float
+    estimatedPanels: int
+    coverage: float
+    estimatedSavings: float
+    recommendation: str
+
+# ===== AUTENTICACIÓN =====
+
+@app.post("/auth/register")
+async def register(user: UsuarioRegistro):
+    """Registrar nuevo usuario con validaciones"""
+    try:
+        # Verificar si el usuario ya existe
+        cursor.execute("SELECT email FROM usuarios WHERE email = ?", (user.email,))
+        if cursor.fetchone():
+            return {"detail": "El usuario ya existe", "status": 400}
+        
+        # Insertar nuevo usuario (en producción: hashear password con bcrypt)
+        cursor.execute(
+            """INSERT INTO usuarios (nombre, email, telefono, password, rol, created_at) 
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (user.name, user.email, user.phone, user.password, user.role, datetime.now())
+        )
+        conn.commit()
+        
+        usuario_id = cursor.lastrowid
+        
+        return {
+            "id": usuario_id,
+            "email": user.email,
+            "name": user.name,
+            "phone": user.phone,
+            "role": user.role,
+            "token": None
+        }
+    except Exception as e:
+        return {"detail": str(e), "status": 500}
+
+@app.post("/auth/login")
+async def login(credentials: UsuarioLogin):
+    """Autenticar usuario y retornar sesión"""
+    try:
+        cursor.execute(
+            "SELECT id, nombre, email, telefono, rol FROM usuarios WHERE email = ? AND password = ?",
+            (credentials.email, credentials.password)
+        )
+        user = cursor.fetchone()
+        
+        if not user:
+            return {"detail": "Credenciales incorrectas", "status": 401}
+        
+        return {
+            "id": user["id"],
+            "email": user["email"],
+            "name": user["nombre"],
+            "phone": user["telefono"],
+            "role": user["rol"],
+            "token": None
+        }
+    except Exception as e:
+        return {"detail": str(e), "status": 500}
+
+@app.get("/auth/me")
+async def current_user(email: str):
+    """Obtener datos del usuario actual"""
+    try:
+        cursor.execute(
+            "SELECT id, nombre, email, telefono, rol FROM usuarios WHERE email = ?",
+            (email,)
+        )
+        user = cursor.fetchone()
+        
+        if not user:
+            return {"detail": "Usuario no encontrado", "status": 404}
+        
+        return {
+            "id": user["id"],
+            "email": user["email"],
+            "name": user["nombre"],
+            "phone": user["telefono"],
+            "role": user["rol"]
+        }
+    except Exception as e:
+        return {"detail": str(e), "status": 500}
 
 # ------------------- CRUD USUARIOS -------------------
 @app.get("/usuarios")
@@ -158,14 +269,36 @@ async def get_calculos():
     return cursor.fetchall()
 
 @app.post("/calculos")
-async def insert_calculo(usuario_id: int, panel_id: int, inversor_id: int, bateria_id: int,
-                         paneles_necesarios: int, inversor_kw: float, bateria_kwh: float, costo_total: float):
-    cursor.execute("""INSERT INTO calculos_sistema 
-        (usuario_id, panel_id, inversor_id, bateria_id, paneles_necesarios, inversor_kw, bateria_kwh, costo_total) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (usuario_id, panel_id, inversor_id, bateria_id, paneles_necesarios, inversor_kw, bateria_kwh, costo_total))
-    conn.commit()
-    return {"message": "Cálculo insertado"}
+async def insert_calculo_v2(calculo: CalculoCrear):
+    """Crear nuevo cálculo (versión JSON con email)"""
+    try:
+        cursor.execute("""
+            INSERT INTO calculos_sistema (email, consumption, estimatedPanels, coverage, 
+                                         estimatedSavings, recommendation, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            calculo.email,
+            calculo.consumption,
+            calculo.estimatedPanels,
+            calculo.coverage,
+            calculo.estimatedSavings,
+            calculo.recommendation,
+            datetime.now()
+        ))
+        conn.commit()
+        
+        return {
+            "id": cursor.lastrowid,
+            "email": calculo.email,
+            "consumption": calculo.consumption,
+            "estimatedPanels": calculo.estimatedPanels,
+            "coverage": calculo.coverage,
+            "estimatedSavings": calculo.estimatedSavings,
+            "recommendation": calculo.recommendation,
+            "created_at": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {"detail": str(e), "status": 500}
 
 @app.put("/calculos/{id}")
 async def update_calculo(id: int, usuario_id: int, panel_id: int, inversor_id: int, bateria_id: int,
