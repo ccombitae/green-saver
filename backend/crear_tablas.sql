@@ -32,11 +32,7 @@ CREATE TABLE IF NOT EXISTS calculos_sistema (
     bateria_kwh FLOAT,
     costo_total FLOAT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
-    FOREIGN KEY (email) REFERENCES usuarios(email) ON DELETE CASCADE,
-    FOREIGN KEY (panel_id) REFERENCES paneles(id) ON DELETE SET NULL,
-    FOREIGN KEY (inversor_id) REFERENCES inversores(id) ON DELETE SET NULL,
-    FOREIGN KEY (bateria_id) REFERENCES baterias(id) ON DELETE SET NULL
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
 -- Tabla de proveedores (existente, asegurar que existe)

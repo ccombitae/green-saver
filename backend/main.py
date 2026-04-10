@@ -1,4 +1,5 @@
 import mariadb
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -16,17 +17,21 @@ app.add_middleware(
 )
 
 # Conexión a MariaDB
-DB_HOST = "localhost"
-DB_NAME = "greensaver"
-DB_USER = "root"
-DB_PASWD = ""
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_NAME = os.getenv("DB_NAME", "greensaver")
+DB_USER = os.getenv("DB_USER", "root")
+DB_PASWD = os.getenv("DB_PASWD", "")
+DB_PORT = int(os.getenv("DB_PORT", "3306"))
+
+conn = None
+cursor = None
 
 try:
     conn = mariadb.connect(
         user=DB_USER,
         password=DB_PASWD,
         host=DB_HOST,
-        port=3306,
+        port=DB_PORT,
         database=DB_NAME
     )
     cursor = conn.cursor(dictionary=True)  # devuelve resultados como dict
