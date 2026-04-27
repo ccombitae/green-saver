@@ -31,10 +31,25 @@ CREATE TABLE IF NOT EXISTS calculos_sistema (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS cotizaciones (
+    id SERIAL PRIMARY KEY,
+    calculation_id INT NOT NULL,
+    client_email VARCHAR(255) NOT NULL,
+    client_name VARCHAR(255) NOT NULL,
+    total_price NUMERIC(12, 2) NOT NULL,
+    notes TEXT,
+    materials JSONB NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'sent',
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (calculation_id) REFERENCES calculos_sistema(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
 CREATE INDEX IF NOT EXISTS idx_calculos_email ON calculos_sistema(email);
 CREATE INDEX IF NOT EXISTS idx_calculos_usuario_id ON calculos_sistema(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_calculos_created_at ON calculos_sistema(created_at);
+CREATE INDEX IF NOT EXISTS idx_cotizaciones_calculation_id ON cotizaciones(calculation_id);
+CREATE INDEX IF NOT EXISTS idx_cotizaciones_sent_at ON cotizaciones(sent_at);
 
 INSERT INTO usuarios (nombre, email, telefono, password, rol, ciudad, consumo_mensual)
 VALUES ('Administrador', 'admin@greensaver.com', '+34 000 000 000', 'admin', 'admin', 'Madrid', 0)

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.routes.auth import router as auth_router
+from app.routes.quotes import router as quotes_router
 from app.routes.solar import router as solar_router
 from app.routes.users import router as users_router
 
@@ -20,6 +21,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(solar_router)
+app.include_router(quotes_router)
 
 
 @app.get("/")
