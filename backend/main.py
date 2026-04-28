@@ -1,6 +1,7 @@
 import mariadb
 import os
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime
@@ -49,6 +50,10 @@ class UsuarioRegistro(BaseModel):
 class UsuarioLogin(BaseModel):
     email: str
     password: str
+
+class RecuperarPassword(BaseModel):
+    email: str
+    newPassword: str
 
 class CalculoCrear(BaseModel):
     email: str
@@ -113,6 +118,43 @@ async def login(credentials: UsuarioLogin):
         }
     except Exception as e:
         return {"detail": str(e), "status": 500}
+
+@app.post("/auth/recover-password")
+async def recover_password(payload: RecuperarPassword):
+    """Actualizar contraseña en MariaDB usando email"""
+    try:
+        if cursor is None or conn is None:
+            raise HTTPException(status_code=503, detail="Base de datos no disponible")
+
+        email = payload.email.strip().lower()
+        new_password = payload.newPassword.strip()
+
+        if not email or not new_password:
+            raise HTTPException(status_code=400, detail="Correo y nueva contraseña son obligatorios")
+
+        if email == "admin@greensaver.com":
+            raise HTTPException(status_code=400, detail="La contraseña del administrador fijo no se puede recuperar desde esta pantalla")
+
+        cursor.execute("SELECT id FROM usuarios WHERE email = ?", (email,))
+        existing_user = cursor.fetchone()
+
+        if not existing_user:
+            raise HTTPException(status_code=404, detail="No existe una cuenta registrada con ese correo")
+
+        cursor.execute(
+            "UPDATE usuarios SET password = ?, updated_at = ? WHERE email = ?",
+            (new_password, datetime.now(), email)
+        )
+        conn.commit()
+
+        return {
+            "message": "Contraseña actualizada",
+            "email": email,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/auth/me")
 async def current_user(email: str):
