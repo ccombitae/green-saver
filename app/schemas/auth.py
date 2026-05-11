@@ -19,10 +19,18 @@ class PasswordRecoveryRequest(BaseModel):
     newPassword: str = Field(min_length=4)
 
 
+class RefreshTokenRequest(BaseModel):
+    refreshToken: str = Field(min_length=20)
+
+
 class AuthResponse(BaseModel):
     id: int
     email: str
     name: str
     phone: str | None = None
     role: str
-    token: str | None = None
+    access_token: str | None = None
+    refresh_token: str | None = None
+    token_type: str = "bearer"
+    expires_in: int | None = None
+    refresh_expires_in: int | None = None

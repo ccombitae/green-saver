@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException
 
-from app.schemas.auth import AuthResponse, PasswordRecoveryRequest, UsuarioLogin, UsuarioRegistro
-from app.services.auth_service import get_current_user, login_user, recover_password, register_user
+from fastapi import Request
+
+from app.schemas.auth import AuthResponse, PasswordRecoveryRequest, RefreshTokenRequest, UsuarioLogin, UsuarioRegistro
+from app.services.auth_service import get_current_user, login_user, recover_password, refresh_session, register_user
 
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -28,11 +30,22 @@ async def login(credentials: UsuarioLogin):
 
 
 @router.get("/me")
-async def current_user(email: str):
+async def current_user(request: Request, email: str | None = None):
     try:
-        return get_current_user(email)
+        token_payload = getattr(request.state, "auth", None)
+        return get_current_user(email=email, token_payload=token_payload)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/refresh", response_model=AuthResponse)
+async def refresh_tokens(payload: RefreshTokenRequest):
+    try:
+        return refresh_session(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

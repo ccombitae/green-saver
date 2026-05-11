@@ -6,6 +6,9 @@ class Settings:
         self.app_name = os.getenv("APP_NAME", "Green Saver API")
         self.app_version = os.getenv("APP_VERSION", "1.0.0")
         self.database_url = os.getenv("DATABASE_URL", "")
+        self.secret_key = os.getenv("SECRET_KEY", "green-saver-dev-secret-change-me")
+        self.access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+        self.refresh_token_expire_days = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
         self.welcome_message = os.getenv(
             "WELCOME_MESSAGE",
             "Bienvenido a Green Saver API",
