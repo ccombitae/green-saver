@@ -35,4 +35,7 @@ class AuthResponse(BaseModel):
     expires_in: int | None = None
     refresh_expires_in: int | None = None
 
- 
+
+class PasswordRecoveryResponse(BaseModel):
+    message: str
+    email: str
