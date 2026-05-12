@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from fastapi import Request
 
-from app.schemas.auth import AuthResponse, PasswordRecoveryRequest, RefreshTokenRequest, UsuarioLogin, UsuarioRegistro
+from app.schemas.auth import AuthResponse, PasswordRecoveryRequest, PasswordRecoveryResponse, RefreshTokenRequest, UsuarioLogin, UsuarioRegistro
 from app.services.auth_service import get_current_user, login_user, recover_password, refresh_session, register_user
 
 
@@ -50,7 +50,7 @@ async def refresh_tokens(payload: RefreshTokenRequest):
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@router.post("/recover-password")
+@router.post("/recover-password", response_model=PasswordRecoveryResponse)
 async def recover_user_password(payload: PasswordRecoveryRequest):
     try:
         return recover_password(payload)

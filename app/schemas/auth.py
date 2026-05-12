@@ -5,7 +5,7 @@ class UsuarioRegistro(BaseModel):
     name: str = Field(min_length=2)
     phone: str = Field(min_length=4)
     email: str = Field(min_length=5)
-    password: str = Field(min_length=4, max_length=72)
+    password: str = Field(min_length=4, max_length=256)
     role: str = "user"
 
 
@@ -16,7 +16,7 @@ class UsuarioLogin(BaseModel):
 
 class PasswordRecoveryRequest(BaseModel):
     email: str = Field(min_length=5)
-    newPassword: str = Field(min_length=4, max_length=72)
+    newPassword: str = Field(min_length=4, max_length=256)
 
 
 class RefreshTokenRequest(BaseModel):

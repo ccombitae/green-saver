@@ -5,10 +5,9 @@ from app.db.database import db_cursor
 from app.schemas.auth import PasswordRecoveryRequest, RefreshTokenRequest, UsuarioLogin, UsuarioRegistro
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 ADMIN_EMAIL = "admin@greensaver.com"
 ADMIN_PASSWORD = "admin"
-MAX_BCRYPT_PASSWORD_BYTES = 72
 
 
 def _normalize_email(email: str) -> str:
@@ -33,12 +32,6 @@ def _admin_user() -> dict:
 
 def _hash_password(password: str) -> str:
     return pwd_context.hash(password)
-
-
-def _validate_password_for_bcrypt(password: str) -> None:
-    # bcrypt only supports up to 72 bytes. Reject early with a user-friendly message.
-    if len(password.encode("utf-8")) > MAX_BCRYPT_PASSWORD_BYTES:
-        raise ValueError("La contraseña es demasiado larga. Usa una de maximo 72 bytes (aprox. 72 caracteres simples).")
 
 
 def _verify_password(plain_password: str, stored_password: str) -> bool:
@@ -85,7 +78,6 @@ def register_user(payload: UsuarioRegistro) -> dict:
     name = payload.name.strip()
     phone = payload.phone.strip()
     role = payload.role.strip() or "user"
-    _validate_password_for_bcrypt(payload.password)
     hashed_password = _hash_password(payload.password)
 
     with db_cursor() as cursor:
@@ -182,7 +174,6 @@ def refresh_session(payload: RefreshTokenRequest) -> dict:
 def recover_password(payload: PasswordRecoveryRequest) -> dict:
     email = _normalize_email(payload.email)
     new_password = payload.newPassword.strip()
-    _validate_password_for_bcrypt(new_password)
 
     if email == "admin@greensaver.com":
         raise ValueError("La contraseña del administrador fijo no se puede recuperar desde esta pantalla")
