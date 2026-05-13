@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: green-saver-api
+    env: docker
+    repo: https://github.com/ccombitae/green-saver.git
+    branch: main
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: DATABASE_URL
+        scope: run
+        value: ${DATABASE_URL}
+      - key: SECRET_KEY
+        scope: run
+        value: ${SECRET_KEY}
+      - key: CORS_ORIGINS
+        scope: run
+        value: "*"
+
+databases:
+  - name: green-saver-db
+    databaseName: greensaver
+    plan: free
