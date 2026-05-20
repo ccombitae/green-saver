@@ -23,3 +23,13 @@ class QuoteSendResponse(BaseModel):
     clientEmail: str
     status: str
     sentAt: str
+
+
+class QuoteAcceptRequest(BaseModel):
+    installDate: str = Field(min_length=1)
+
+
+class QuoteAcceptResponse(BaseModel):
+    quoteId: int
+    status: str
+    installDate: str

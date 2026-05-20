@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.core.security import decode_bearer_token, forbidden_response, is_admin_role, unauthorized_response
 from app.routes.auth import router as auth_router
 from app.routes.quotes import router as quotes_router
+from app.routes.systems import router as systems_router
 from app.routes.solar import router as solar_router
 from app.routes.users import router as users_router
 
@@ -37,12 +38,14 @@ AUTH_REQUIRED_PREFIXES = (
     "/calculos",
     "/usuarios",
     "/quotes",
+    "/systems",
 )
 
 ADMIN_ONLY_PREFIXES = (
     "/usuarios",
     "/quotes",
     "/calculos/reporte",
+    "/systems/assign",
 )
 
 
@@ -78,6 +81,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(solar_router)
 app.include_router(quotes_router)
+app.include_router(systems_router)
 
 
 @app.get("/")
