@@ -38,7 +38,7 @@ def _verify_password(plain_password: str, stored_password: str) -> bool:
     if not stored_password:
         return False
 
-    if stored_password.startswith("$2"):
+    if stored_password.startswith("$"):
         try:
             return pwd_context.verify(plain_password, stored_password)
         except Exception:
