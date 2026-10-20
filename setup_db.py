@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-import psycopg2
+import os
 import sys
 
+import psycopg2
+
 # Connection string
-DATABASE_URL = "postgresql://greensaver_user:H3qwNmPzKleB7r6HTeGIsYN7AIyGdFYm@dpg-d82jg53bc2fs73b8jl80-a.oregon-postgres.render.com/greensaver"
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    sys.exit("Define la variable de entorno DATABASE_URL antes de ejecutar este script.")
 
 try:
     # Connect

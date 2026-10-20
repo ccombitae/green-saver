@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+
+from app.core.security import is_admin_role
 
 from app.schemas.solar import CalculoCrear
 from app.services.solar_service import create_calculo, delete_calculo, list_calculos, report_general, update_calculo
@@ -8,9 +10,13 @@ router = APIRouter(prefix="/calculos", tags=["Calculos"])
 
 
 @router.get("")
-async def get_calculos():
+async def get_calculos(request: Request):
+    # El administrador ve todos los cálculos; un usuario normal solo los suyos.
+    auth = getattr(request.state, "auth", {}) or {}
     try:
-        return list_calculos()
+        if is_admin_role(auth.get("role")):
+            return list_calculos()
+        return list_calculos(email=auth.get("email"))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

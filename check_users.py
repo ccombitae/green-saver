@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
+import os
+import sys
+
 import psycopg2
 
-# Connection string de Render
-DATABASE_URL = "postgresql://greensaver_user:H3qwNmPzKleB7r6HTeGIsYN7AIyGdFYm@dpg-d82jg53bc2fs73b8jl80-a.oregon-postgres.render.com/greensaver"
+# La cadena de conexión se lee de la variable de entorno DATABASE_URL.
+# Nunca escribir credenciales en el código.
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    sys.exit("Define la variable de entorno DATABASE_URL antes de ejecutar este script.")
 
 try:
     conn = psycopg2.connect(DATABASE_URL)

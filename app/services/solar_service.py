@@ -4,15 +4,26 @@ from app.db.database import db_cursor
 from app.schemas.solar import CalculoCrear
 
 
-def list_calculos() -> list[dict]:
+def list_calculos(email: str | None = None) -> list[dict]:
+    """
+    Lista los cálculos. Si se pasa `email`, solo los de ese usuario.
+
+    Las columnas se crearon sin comillas (estimatedPanels), así que PostgreSQL
+    las guarda en minúscula; los alias entre comillas devuelven camelCase para
+    que coincidan con lo que retorna POST /calculos y con lo que espera la app.
+    """
+    filtro = "WHERE lower(email) = lower(%s)" if email else ""
     with db_cursor() as cursor:
         cursor.execute(
-            """
-            SELECT id, email, consumption, estimatedPanels, coverage,
-                   estimatedSavings, recommendation, created_at
+            f"""
+            SELECT id, email, consumption,
+                   estimatedpanels AS "estimatedPanels", coverage,
+                   estimatedsavings AS "estimatedSavings", recommendation, created_at
             FROM calculos_sistema
+            {filtro}
             ORDER BY created_at DESC
-            """
+            """,
+            (email,) if email else None,
         )
         return cursor.fetchall()
 

@@ -1,3 +1,5 @@
+import os
+
 from passlib.context import CryptContext
 
 from app.core.security import create_access_token, create_refresh_token, decode_token
@@ -7,7 +9,8 @@ from app.schemas.auth import PasswordRecoveryRequest, RefreshTokenRequest, Usuar
 
 pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 ADMIN_EMAIL = "admin@greensaver.com"
-ADMIN_PASSWORD = "admin"
+# Configurable por variable de entorno; en producción NO dejar el valor por defecto.
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin")
 
 
 def _normalize_email(email: str) -> str:
