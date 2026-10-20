@@ -40,7 +40,10 @@ def recomendacion(cobertura_anual: float, peor_mes: dict, fuente: str) -> str:
         texto = "El sistema cubre la mayor parte de tu consumo; la red cubriría el resto."
     else:
         texto = "Cobertura parcial: considera más paneles o reducir el consumo."
-    texto += f" El mes con menos producción es {peor_mes['mes']} ({peor_mes['cobertura_pct']:.0f} % de cobertura)."
+    if peor_mes["cobertura_pct"] >= 100:
+        texto += f" Incluso en {peor_mes['mes']}, el mes de menor producción, se cubre todo el consumo."
+    else:
+        texto += f" El mes de menor producción es {peor_mes['mes']} ({peor_mes['cobertura_pct']:.0f} % de cobertura)."
     if fuente != "modelo":
         texto += " Estimación aproximada: el modelo de predicción no estaba disponible."
     return texto
@@ -82,7 +85,7 @@ def estimar_sistema(
     consumo_anual = consumo_mensual_kwh * 12
     autoconsumo_anual = sum(min(m["generacion_kwh"], consumo_mensual_kwh) for m in detalle)
     cobertura_anual = min(100.0, autoconsumo_anual / consumo_anual * 100)
-    peor_mes = min(detalle, key=lambda m: m["cobertura_pct"])
+    peor_mes = min(detalle, key=lambda m: m["generacion_kwh"])
     potencia_kwp = paneles * potencia_panel_w / 1000
 
     return {
