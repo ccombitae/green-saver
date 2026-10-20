@@ -7,3 +7,7 @@ pydantic>=2.0,<3.0
 python-jose[cryptography]>=3.3,<4.0
 passlib[bcrypt]>=1.7,<2.0
 bcrypt>=3.2,<4.0
+# Machine Learning (predicción de Horas Solares Pico)
+numpy==2.2.6
+scikit-learn==1.7.2
+joblib>=1.4,<2

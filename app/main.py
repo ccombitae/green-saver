@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.core.security import decode_bearer_token, forbidden_response, is_admin_role, unauthorized_response
 from app.routes.auth import router as auth_router
+from app.routes.ml import router as ml_router
 from app.routes.quotes import router as quotes_router
 from app.routes.systems import router as systems_router
 from app.routes.solar import router as solar_router
@@ -82,6 +83,7 @@ app.include_router(users_router)
 app.include_router(solar_router)
 app.include_router(quotes_router)
 app.include_router(systems_router)
+app.include_router(ml_router)
 
 
 @app.get("/")
