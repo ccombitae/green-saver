@@ -43,6 +43,29 @@ python -m pytest                # 4. Pruebas automáticas
 Luego **hay que hacer commit** de `ml/data/`, `ml/reports/` y `app/ml/artifacts/`: el servidor usa esos
 archivos y no entrena nada al arrancar.
 
+## Resultados (datos reales, 2005–2024, 49 ciudades, 11 760 registros)
+
+| Modelo | MAE (kWh/m²/día) | RMSE | R² | MAPE |
+|---|---|---|---|---|
+| Línea base (promedio del mes) | 0,450 | 0,575 | 0,03 | 9,7 % |
+| Regresión lineal | 0,288 | 0,368 | 0,60 | 6,2 % |
+| Random Forest | 0,237 | 0,305 | 0,73 | 5,2 % |
+| **Gradient Boosting (elegido)** | **0,231** | **0,294** | **0,75** | **5,0 %** |
+
+El modelo elegido reduce el error de la línea base en un 49 %. La nubosidad es la variable más importante,
+seguida de la latitud y la época del año.
+
+## Limitaciones (para la sección de conclusiones)
+
+- **Resolución de los datos solares de NASA POWER: celdas de 1°×1° (~110 km).** Girardot, Bogotá, Soacha,
+  Fusagasugá, Facatativá, La Mesa, Melgar y Espinal caen en la misma celda y tienen la misma radiación
+  observada (4,65 HSP), aunque en la realidad Girardot (valle cálido a ~300 m) probablemente recibe más sol
+  que Bogotá (~2 600 m). El modelo las diferencia un poco gracias a las variables climáticas, que vienen en
+  una resolución más fina (0,5°×0,625°), pero no del todo.
+- **Trabajo futuro:** incorporar datos de mayor resolución (Atlas de Radiación Solar del IDEAM/UPME,
+  estaciones meteorológicas locales o mediciones propias de instalaciones reales de Green Saver) y
+  reentrenar.
+
 ## Endpoints
 
 | Método | Ruta | Descripción |

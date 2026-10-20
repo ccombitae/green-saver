@@ -146,7 +146,9 @@ def graficar(df: pd.DataFrame, res: dict, carpeta: Path) -> None:
     datos_mes = [df.loc[df["mes"] == m, OBJETIVO] for m in range(1, 13)]
     ax.boxplot(datos_mes, tick_labels=MESES, patch_artist=True,
                boxprops={"facecolor": "#D1F2E0", "color": GRIS}, medianprops={"color": OSCURO})
-    for cid, color, etiqueta in (("girardot", ROJO, "Girardot"), ("bogota", "#2563EB", "Bogotá")):
+    # Se compara Girardot con la ciudad de más sol y una de las de menos sol.
+    # (Bogotá no se usa: comparte celda de 1°x1° con Girardot y su línea quedaría encima)
+    for cid, color, etiqueta in (("girardot", ROJO, "Girardot"), ("riohacha", "#F59E0B", "Riohacha"), ("quibdo", "#2563EB", "Quibdó")):
         sub = df[df["ciudad_id"] == cid]
         if not sub.empty:
             ax.plot(range(1, 13), sub.groupby("mes")[OBJETIVO].mean().reindex(range(1, 13)), marker="o", color=color, label=etiqueta)
