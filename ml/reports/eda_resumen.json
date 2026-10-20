@@ -1,0 +1,348 @@
+{
+  "filas": 11760,
+  "ciudades": 49,
+  "periodo": "2005-2024",
+  "faltantes_por_variable": {
+    "ALLSKY_SFC_SW_DWN": 0,
+    "CLOUD_AMT": 0,
+    "T2M": 0,
+    "RH2M": 0,
+    "PRECTOTCORR": 0,
+    "WS2M": 0,
+    "elevacion": 0
+  },
+  "estadisticas_hsp": {
+    "mean": 4.714,
+    "std": 0.583,
+    "min": 3.025,
+    "25%": 4.311,
+    "50%": 4.665,
+    "75%": 5.068,
+    "max": 6.966
+  },
+  "ranking_ciudades": [
+    {
+      "ciudad_id": "santa_marta",
+      "ciudad": "Santa Marta",
+      "departamento": "Magdalena",
+      "hsp_promedio": 5.724
+    },
+    {
+      "ciudad_id": "riohacha",
+      "ciudad": "Riohacha",
+      "departamento": "La Guajira",
+      "hsp_promedio": 5.539
+    },
+    {
+      "ciudad_id": "barranquilla",
+      "ciudad": "Barranquilla",
+      "departamento": "Atlántico",
+      "hsp_promedio": 5.409
+    },
+    {
+      "ciudad_id": "san_andres",
+      "ciudad": "San Andrés",
+      "departamento": "San Andrés y Providencia",
+      "hsp_promedio": 5.376
+    },
+    {
+      "ciudad_id": "cartagena",
+      "ciudad": "Cartagena",
+      "departamento": "Bolívar",
+      "hsp_promedio": 5.325
+    },
+    {
+      "ciudad_id": "puerto_carreno",
+      "ciudad": "Puerto Carreño",
+      "departamento": "Vichada",
+      "hsp_promedio": 5.279
+    },
+    {
+      "ciudad_id": "valledupar",
+      "ciudad": "Valledupar",
+      "departamento": "Cesar",
+      "hsp_promedio": 5.257
+    },
+    {
+      "ciudad_id": "sincelejo",
+      "ciudad": "Sincelejo",
+      "departamento": "Sucre",
+      "hsp_promedio": 5.137
+    },
+    {
+      "ciudad_id": "bucaramanga",
+      "ciudad": "Bucaramanga",
+      "departamento": "Santander",
+      "hsp_promedio": 5.066
+    },
+    {
+      "ciudad_id": "barrancabermeja",
+      "ciudad": "Barrancabermeja",
+      "departamento": "Santander",
+      "hsp_promedio": 5.066
+    },
+    {
+      "ciudad_id": "honda",
+      "ciudad": "Honda",
+      "departamento": "Tolima",
+      "hsp_promedio": 5.06
+    },
+    {
+      "ciudad_id": "villeta",
+      "ciudad": "Villeta",
+      "departamento": "Cundinamarca",
+      "hsp_promedio": 5.06
+    },
+    {
+      "ciudad_id": "guaduas",
+      "ciudad": "Guaduas",
+      "departamento": "Cundinamarca",
+      "hsp_promedio": 5.06
+    },
+    {
+      "ciudad_id": "zipaquira",
+      "ciudad": "Zipaquirá",
+      "departamento": "Cundinamarca",
+      "hsp_promedio": 5.06
+    },
+    {
+      "ciudad_id": "arauca",
+      "ciudad": "Arauca",
+      "departamento": "Arauca",
+      "hsp_promedio": 5.045
+    },
+    {
+      "ciudad_id": "aguachica",
+      "ciudad": "Aguachica",
+      "departamento": "Cesar",
+      "hsp_promedio": 5.009
+    },
+    {
+      "ciudad_id": "monteria",
+      "ciudad": "Montería",
+      "departamento": "Córdoba",
+      "hsp_promedio": 4.986
+    },
+    {
+      "ciudad_id": "medellin",
+      "ciudad": "Medellín",
+      "departamento": "Antioquia",
+      "hsp_promedio": 4.906
+    },
+    {
+      "ciudad_id": "inirida",
+      "ciudad": "Inírida",
+      "departamento": "Guainía",
+      "hsp_promedio": 4.838
+    },
+    {
+      "ciudad_id": "manizales",
+      "ciudad": "Manizales",
+      "departamento": "Caldas",
+      "hsp_promedio": 4.771
+    },
+    {
+      "ciudad_id": "san_jose_guaviare",
+      "ciudad": "San José del Guaviare",
+      "departamento": "Guaviare",
+      "hsp_promedio": 4.748
+    },
+    {
+      "ciudad_id": "soacha",
+      "ciudad": "Soacha",
+      "departamento": "Cundinamarca",
+      "hsp_promedio": 4.648
+    },
+    {
+      "ciudad_id": "bogota",
+      "ciudad": "Bogotá D.C.",
+      "departamento": "Bogotá D.C.",
+      "hsp_promedio": 4.648
+    },
+    {
+      "ciudad_id": "fusagasuga",
+      "ciudad": "Fusagasugá",
+      "departamento": "Cundinamarca",
+      "hsp_promedio": 4.648
+    },
+    {
+      "ciudad_id": "girardot",
+      "ciudad": "Girardot",
+      "departamento": "Cundinamarca",
+      "hsp_promedio": 4.648
+    },
+    {
+      "ciudad_id": "facatativa",
+      "ciudad": "Facatativá",
+      "departamento": "Cundinamarca",
+      "hsp_promedio": 4.648
+    },
+    {
+      "ciudad_id": "espinal",
+      "ciudad": "Espinal",
+      "departamento": "Tolima",
+      "hsp_promedio": 4.648
+    },
+    {
+      "ciudad_id": "melgar",
+      "ciudad": "Melgar",
+      "departamento": "Tolima",
+      "hsp_promedio": 4.648
+    },
+    {
+      "ciudad_id": "la_mesa",
+      "ciudad": "La Mesa",
+      "departamento": "Cundinamarca",
+      "hsp_promedio": 4.648
+    },
+    {
+      "ciudad_id": "mitu",
+      "ciudad": "Mitú",
+      "departamento": "Vaupés",
+      "hsp_promedio": 4.572
+    },
+    {
+      "ciudad_id": "leticia",
+      "ciudad": "Leticia",
+      "departamento": "Amazonas",
+      "hsp_promedio": 4.57
+    },
+    {
+      "ciudad_id": "yopal",
+      "ciudad": "Yopal",
+      "departamento": "Casanare",
+      "hsp_promedio": 4.535
+    },
+    {
+      "ciudad_id": "ubate",
+      "ciudad": "Villa de San Diego de Ubaté",
+      "departamento": "Cundinamarca",
+      "hsp_promedio": 4.535
+    },
+    {
+      "ciudad_id": "tunja",
+      "ciudad": "Tunja",
+      "departamento": "Boyacá",
+      "hsp_promedio": 4.535
+    },
+    {
+      "ciudad_id": "armenia",
+      "ciudad": "Armenia",
+      "departamento": "Quindío",
+      "hsp_promedio": 4.533
+    },
+    {
+      "ciudad_id": "ibague",
+      "ciudad": "Ibagué",
+      "departamento": "Tolima",
+      "hsp_promedio": 4.533
+    },
+    {
+      "ciudad_id": "pereira",
+      "ciudad": "Pereira",
+      "departamento": "Risaralda",
+      "hsp_promedio": 4.533
+    },
+    {
+      "ciudad_id": "florencia",
+      "ciudad": "Florencia",
+      "departamento": "Caquetá",
+      "hsp_promedio": 4.373
+    },
+    {
+      "ciudad_id": "medina",
+      "ciudad": "Medina",
+      "departamento": "Cundinamarca",
+      "hsp_promedio": 4.322
+    },
+    {
+      "ciudad_id": "villavicencio",
+      "ciudad": "Villavicencio",
+      "departamento": "Meta",
+      "hsp_promedio": 4.322
+    },
+    {
+      "ciudad_id": "cucuta",
+      "ciudad": "Cúcuta",
+      "departamento": "Norte de Santander",
+      "hsp_promedio": 4.305
+    },
+    {
+      "ciudad_id": "neiva",
+      "ciudad": "Neiva",
+      "departamento": "Huila",
+      "hsp_promedio": 4.252
+    },
+    {
+      "ciudad_id": "cali",
+      "ciudad": "Cali",
+      "departamento": "Valle del Cauca",
+      "hsp_promedio": 4.2
+    },
+    {
+      "ciudad_id": "buenaventura",
+      "ciudad": "Buenaventura",
+      "departamento": "Valle del Cauca",
+      "hsp_promedio": 4.157
+    },
+    {
+      "ciudad_id": "popayan",
+      "ciudad": "Popayán",
+      "departamento": "Cauca",
+      "hsp_promedio": 4.095
+    },
+    {
+      "ciudad_id": "pasto",
+      "ciudad": "Pasto",
+      "departamento": "Nariño",
+      "hsp_promedio": 4.036
+    },
+    {
+      "ciudad_id": "quibdo",
+      "ciudad": "Quibdó",
+      "departamento": "Chocó",
+      "hsp_promedio": 3.995
+    },
+    {
+      "ciudad_id": "tumaco",
+      "ciudad": "Tumaco",
+      "departamento": "Nariño",
+      "hsp_promedio": 3.923
+    },
+    {
+      "ciudad_id": "mocoa",
+      "ciudad": "Mocoa",
+      "departamento": "Putumayo",
+      "hsp_promedio": 3.774
+    }
+  ],
+  "perfil_mensual_nacional": {
+    "Ene": 4.88,
+    "Feb": 4.945,
+    "Mar": 4.696,
+    "Abr": 4.636,
+    "May": 4.569,
+    "Jun": 4.57,
+    "Jul": 4.7,
+    "Ago": 4.802,
+    "Sep": 4.949,
+    "Oct": 4.712,
+    "Nov": 4.473,
+    "Dic": 4.639
+  },
+  "correlacion_con_hsp": {
+    "Nubosidad (%)": -0.674,
+    "Humedad relativa (%)": -0.371,
+    "Precipitación (mm/día)": -0.333,
+    "Elevación (m)": -0.25,
+    "Viento (m/s)": 0.277,
+    "Temperatura (°C)": 0.347
+  },
+  "girardot": {
+    "hsp_promedio": 4.648,
+    "posicion_ranking": 25,
+    "de": 49,
+    "mejor_mes": "Sep",
+    "peor_mes": "Mar"
+  }
+}
