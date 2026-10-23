@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/ml-recurso-solar
   workflow_dispatch:
 
 permissions:
