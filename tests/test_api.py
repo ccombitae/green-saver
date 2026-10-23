@@ -106,3 +106,19 @@ def test_errores_500_no_exponen_detalles_internos(monkeypatch):
     )
     assert respuesta.status_code == 500
     assert "gsadmin" not in respuesta.text and "db.interna" not in respuesta.text
+
+
+def test_admin_no_entra_con_la_contrasena_de_la_semilla(monkeypatch):
+    """admin/admin no debe funcionar cuando ADMIN_PASSWORD es otra (B-11)."""
+    from app.services import auth_service
+
+    monkeypatch.setattr(auth_service, "ADMIN_PASSWORD", "OtraClaveSegura123")
+
+    def no_debe_consultar_bd():
+        raise AssertionError("el login del administrador no debe leer la tabla")
+
+    monkeypatch.setattr(auth_service, "db_cursor", no_debe_consultar_bd)
+    respuesta = cliente.post("/auth/login", json={"email": "admin@greensaver.com", "password": "admin"})
+    assert respuesta.status_code == 401
+    respuesta = cliente.post("/auth/login", json={"email": "admin@greensaver.com", "password": "OtraClaveSegura123"})
+    assert respuesta.status_code == 200 and "admin" in respuesta.text

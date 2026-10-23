@@ -64,5 +64,10 @@ CREATE INDEX IF NOT EXISTS idx_cotizaciones_sent_at ON cotizaciones(sent_at);
 CREATE INDEX IF NOT EXISTS idx_sistemas_instalados_usuario_id ON sistemas_instalados(usuario_id);
 
 INSERT INTO usuarios (nombre, email, telefono, password, rol, ciudad, consumo_mensual)
-VALUES ('Administrador', 'admin@greensaver.com', '+34 000 000 000', 'admin', 'admin', 'Madrid', 0)
+VALUES ('Administrador', 'admin@greensaver.com', '+57 000 000 0000', '!sin-acceso-por-tabla', 'admin', 'Girardot', 0)
 ON CONFLICT (email) DO NOTHING;
+
+-- El administrador entra solo con la variable ADMIN_PASSWORD. Se invalida la
+-- contraseña en texto plano que guardaban versiones anteriores de este script.
+UPDATE usuarios SET password = '!sin-acceso-por-tabla'
+WHERE LOWER(email) = 'admin@greensaver.com' AND password NOT LIKE '!%';

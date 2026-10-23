@@ -1,3 +1,4 @@
+import secrets
 import os
 
 from passlib.context import CryptContext
@@ -114,8 +115,12 @@ def register_user(payload: UsuarioRegistro) -> dict:
 def login_user(payload: UsuarioLogin) -> dict:
     email = _normalize_email(payload.email)
 
-    if email == ADMIN_EMAIL and payload.password == ADMIN_PASSWORD:
-        return _user_response(_admin_user())
+    if email == ADMIN_EMAIL:
+        # El administrador fijo solo entra con la contraseña de la variable ADMIN_PASSWORD;
+        # nunca con lo que haya en la tabla (allí la semilla antigua guardaba "admin").
+        if secrets.compare_digest(payload.password.encode(), ADMIN_PASSWORD.encode()):
+            return _user_response(_admin_user())
+        raise ValueError("Credenciales incorrectas")
 
     with db_cursor() as cursor:
         cursor.execute(
