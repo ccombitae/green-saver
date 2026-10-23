@@ -90,3 +90,19 @@ def test_usuario_normal_no_entra_a_rutas_de_admin():
 
 def test_raiz_es_publica():
     assert cliente.get("/").status_code == 200
+
+
+def test_errores_500_no_exponen_detalles_internos(monkeypatch):
+    """Si la base de datos falla, la respuesta no debe revelar el servidor ni el usuario."""
+    from app.routes import auth as auth_routes
+
+    def falla(*args, **kwargs):
+        raise RuntimeError('connection to server at "db.interna" failed for user "gsadmin"')
+
+    monkeypatch.setattr(auth_routes, "register_user", falla)
+    respuesta = cliente.post(
+        "/auth/register",
+        json={"nombre": "Ana", "email": "ana@example.com", "telefono": "3001234567", "password": "Clave1234"},
+    )
+    assert respuesta.status_code == 500
+    assert "gsadmin" not in respuesta.text and "db.interna" not in respuesta.text

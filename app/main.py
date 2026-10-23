@@ -1,6 +1,10 @@
+import logging
+
 from fastapi import FastAPI, Request
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import settings
 from app.db.init_db import init_db_if_enabled
@@ -14,6 +18,20 @@ from app.routes.users import router as users_router
 
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
+
+log = logging.getLogger("green_saver")
+
+
+@app.exception_handler(StarletteHTTPException)
+async def ocultar_errores_internos(request: Request, exc: StarletteHTTPException):
+    """Los errores 5xx no deben mostrar detalles internos (servidor de BD, SQL…)."""
+    if exc.status_code >= 500:
+        log.error("Error interno en %s %s: %s", request.method, request.url.path, exc.detail)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": "Ocurrió un error en el servidor. Intenta de nuevo en unos minutos."},
+        )
+    return await http_exception_handler(request, exc)
 
 
 
