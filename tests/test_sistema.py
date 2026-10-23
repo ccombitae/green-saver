@@ -59,6 +59,13 @@ def test_cp01_registro_de_usuario(ctx):
     assert r.json()["role"] == "user" and r.json()["access_token"]
 
 
+def test_cp01b_registro_no_permite_crear_administradores(ctx):
+    """Regresión del bug B-10: el registro público aceptaba role=admin."""
+    r = ctx["c"].post("/auth/register", json={**USUARIO, "email": "intruso@prueba.com", "role": "admin"})
+    assert r.status_code == 201
+    assert r.json()["role"] == "user"
+
+
 def test_cp02_registro_duplicado_es_rechazado(ctx):
     assert ctx["c"].post("/auth/register", json=USUARIO).status_code == 400
 

@@ -14,13 +14,6 @@ from app.routes.users import router as users_router
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 PUBLIC_PATHS = {
@@ -77,6 +70,17 @@ async def auth_guard(request: Request, call_next):
         return JSONResponse(status_code=status_code, content=detail)
 
     return await call_next(request)
+
+# CORS se registra DESPUÉS del middleware de autenticación para que quede como
+# capa externa: así las respuestas 401/403 también llevan los encabezados CORS
+# y el navegador puede leerlas (por ejemplo, para renovar la sesión).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth_router)
 app.include_router(users_router)

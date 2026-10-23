@@ -80,7 +80,9 @@ def register_user(payload: UsuarioRegistro) -> dict:
     email = _normalize_email(payload.email)
     name = payload.name.strip()
     phone = payload.phone.strip()
-    role = payload.role.strip() or "user"
+    # El registro público SIEMPRE crea usuarios normales. Antes se aceptaba el
+    # campo "role" del cliente y cualquiera podía registrarse como administrador.
+    role = "user"
     hashed_password = _hash_password(payload.password)
 
     with db_cursor() as cursor:
