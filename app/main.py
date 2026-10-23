@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
+from app.db.init_db import init_db_if_enabled
 from app.core.security import decode_bearer_token, forbidden_response, is_admin_role, unauthorized_response
 from app.routes.auth import router as auth_router
 from app.routes.ml import router as ml_router
@@ -88,6 +89,11 @@ app.include_router(solar_router)
 app.include_router(quotes_router)
 app.include_router(systems_router)
 app.include_router(ml_router)
+
+
+@app.on_event("startup")
+def crear_tablas():
+    init_db_if_enabled()
 
 
 @app.get("/")
