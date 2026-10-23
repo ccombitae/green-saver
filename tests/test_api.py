@@ -102,7 +102,7 @@ def test_errores_500_no_exponen_detalles_internos(monkeypatch):
     monkeypatch.setattr(auth_routes, "register_user", falla)
     respuesta = cliente.post(
         "/auth/register",
-        json={"nombre": "Ana", "email": "ana@example.com", "telefono": "3001234567", "password": "Clave1234"},
+        json={"name": "Ana", "email": "ana@example.com", "phone": "3001234567", "password": "Clave1234"},
     )
     assert respuesta.status_code == 500
     assert "gsadmin" not in respuesta.text and "db.interna" not in respuesta.text
