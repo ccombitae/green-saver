@@ -22,6 +22,7 @@ from __future__ import annotations
 import math
 
 from app.ml.predictor import predecir_hsp_mensual
+from app.services.costos_service import estimar_costos
 from app.services.equipos_service import recomendar_baterias, recomendar_instalacion, recomendar_inversor
 
 DIAS_MES = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -89,6 +90,17 @@ def estimar_sistema(
     potencia_kwp = paneles * potencia_panel_w / 1000
     latitud = (prediccion["ciudad"] or {}).get("latitud")
     instalacion = recomendar_instalacion(paneles, potencia_panel_w, latitud)
+    inversor = recomendar_inversor(potencia_kwp)
+    baterias = recomendar_baterias(consumo_mensual_kwh)
+    ahorro_anual = round(autoconsumo_anual * tarifa_kwh_cop)
+    costos = estimar_costos(
+        paneles,
+        potencia_panel_w,
+        potencia_kwp,
+        inversor["potencia_kw"],
+        baterias["respaldo_nocturno"]["modulos"],
+        ahorro_anual,
+    )
 
     return {
         "ciudad": prediccion["ciudad"],
@@ -108,12 +120,13 @@ def estimar_sistema(
         "generacion_mensual_promedio_kwh": round(generacion_anual / 12, 1),
         "rendimiento_especifico_kwh_kwp": round(generacion_anual / potencia_kwp),
         "cobertura_anual_pct": round(cobertura_anual, 1),
-        "ahorro_anual_cop": round(autoconsumo_anual * tarifa_kwh_cop),
+        "ahorro_anual_cop": ahorro_anual,
         "co2_evitado_kg_anual": round(autoconsumo_anual * factor_emision_kg_kwh, 1),
         "recomendacion": recomendacion(cobertura_anual, peor_mes, prediccion["fuente"]),
-        "inversor": recomendar_inversor(potencia_kwp),
-        "baterias": recomendar_baterias(consumo_mensual_kwh),
+        "inversor": inversor,
+        "baterias": baterias,
         "instalacion": instalacion,
+        "costos": costos,
         "detalle_mensual": detalle,
         "hsp_historica": prediccion["hsp_historica"],
     }
