@@ -67,7 +67,7 @@ def recomendar_baterias(consumo_mensual_kwh: float) -> dict:
 
     return {
         "opcional": True,
-        "tecnologia": f"Litio LiFePO4, módulos de {BATERIA_MODULO_KWH} kWh a 48 V",
+        "tecnologia": "Litio LiFePO4, módulos de " + f"{BATERIA_MODULO_KWH:.2f}".replace(".", ",") + " kWh a 48 V",
         "respaldo_nocturno": banco(consumo_diario * FRACCION_CONSUMO_SIN_SOL),
         "autonomia_un_dia": banco(consumo_diario),
         "nota": "Un sistema conectado a la red no necesita baterías: la red suple la energía de la noche. "
