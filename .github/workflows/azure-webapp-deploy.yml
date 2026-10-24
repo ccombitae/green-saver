@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+# Un despliegue a la vez: si llega otro cambio, espera a que termine el anterior.
+concurrency:
+  group: despliegue-azure
+  cancel-in-progress: false
+
 jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
