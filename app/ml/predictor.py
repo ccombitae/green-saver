@@ -43,7 +43,12 @@ def _climatologia() -> dict[str, dict]:
         for fila in csv.DictReader(archivo):
             ciudad = ciudades.setdefault(
                 fila["ciudad_id"],
-                {"nombre": fila["ciudad"], "departamento": fila["departamento"], "meses": {}},
+                {
+                    "nombre": fila["ciudad"],
+                    "departamento": fila["departamento"],
+                    "latitud": float(fila["latitud"]),
+                    "meses": {},
+                },
             )
             ciudad["meses"][int(fila["mes"])] = fila
     return ciudades
@@ -117,7 +122,12 @@ def predecir_hsp_mensual(ciudad_id: str | None) -> dict:
     if modelo is None:
         return {
             "fuente": "historico",
-            "ciudad": {"id": ciudad_id, "nombre": ciudad["nombre"], "departamento": ciudad["departamento"]},
+            "ciudad": {
+                "id": ciudad_id,
+                "nombre": ciudad["nombre"],
+                "departamento": ciudad["departamento"],
+                "latitud": ciudad["latitud"],
+            },
             "hsp_mensual": historica,
             "hsp_historica": historica,
         }
@@ -126,7 +136,12 @@ def predecir_hsp_mensual(ciudad_id: str | None) -> dict:
     predicciones = [round(max(0.5, float(valor)), 3) for valor in modelo.predict(matriz)]
     return {
         "fuente": "modelo",
-        "ciudad": {"id": ciudad_id, "nombre": ciudad["nombre"], "departamento": ciudad["departamento"]},
+        "ciudad": {
+                "id": ciudad_id,
+                "nombre": ciudad["nombre"],
+                "departamento": ciudad["departamento"],
+                "latitud": ciudad["latitud"],
+            },
         "hsp_mensual": predicciones,
         "hsp_historica": historica,
     }

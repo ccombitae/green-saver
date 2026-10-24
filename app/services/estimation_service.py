@@ -22,10 +22,10 @@ from __future__ import annotations
 import math
 
 from app.ml.predictor import predecir_hsp_mensual
+from app.services.equipos_service import recomendar_baterias, recomendar_instalacion, recomendar_inversor
 
 DIAS_MES = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-AREA_M2_POR_KWP = 4.8  # área aproximada de módulos por kWp instalado (paneles de ~21 % de eficiencia)
 
 
 def energia_panel_mes(potencia_panel_w: float, hsp: float, dias: int, rendimiento: float) -> float:
@@ -87,6 +87,8 @@ def estimar_sistema(
     cobertura_anual = min(100.0, autoconsumo_anual / consumo_anual * 100)
     peor_mes = min(detalle, key=lambda m: m["generacion_kwh"])
     potencia_kwp = paneles * potencia_panel_w / 1000
+    latitud = (prediccion["ciudad"] or {}).get("latitud")
+    instalacion = recomendar_instalacion(paneles, potencia_panel_w, latitud)
 
     return {
         "ciudad": prediccion["ciudad"],
@@ -101,13 +103,17 @@ def estimar_sistema(
         "hsp_promedio": round(sum(hsp) / 12, 2),
         "paneles": paneles,
         "potencia_kwp": round(potencia_kwp, 2),
-        "area_aprox_m2": round(potencia_kwp * AREA_M2_POR_KWP, 1),
+        "area_aprox_m2": instalacion["area_paneles_m2"],
         "generacion_anual_kwh": round(generacion_anual, 1),
         "generacion_mensual_promedio_kwh": round(generacion_anual / 12, 1),
+        "rendimiento_especifico_kwh_kwp": round(generacion_anual / potencia_kwp),
         "cobertura_anual_pct": round(cobertura_anual, 1),
         "ahorro_anual_cop": round(autoconsumo_anual * tarifa_kwh_cop),
         "co2_evitado_kg_anual": round(autoconsumo_anual * factor_emision_kg_kwh, 1),
         "recomendacion": recomendacion(cobertura_anual, peor_mes, prediccion["fuente"]),
+        "inversor": recomendar_inversor(potencia_kwp),
+        "baterias": recomendar_baterias(consumo_mensual_kwh),
+        "instalacion": instalacion,
         "detalle_mensual": detalle,
         "hsp_historica": prediccion["hsp_historica"],
     }
