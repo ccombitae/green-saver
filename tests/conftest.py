@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -43,3 +44,30 @@ def sin_artefactos(tmp_path, monkeypatch):
     predictor.recargar()
     yield
     predictor.recargar()
+
+
+def reiniciar_base_de_datos(url: str) -> None:
+    import psycopg2
+
+    from app.db.migrar import aplicar_migraciones
+
+    with psycopg2.connect(url) as conexion, conexion.cursor() as cursor:
+        cursor.execute("DROP SCHEMA IF EXISTS legado CASCADE")
+        cursor.execute("DROP SCHEMA public CASCADE")
+        cursor.execute("CREATE SCHEMA public")
+    aplicar_migraciones()
+
+
+@pytest.fixture(scope="module")
+def base_de_datos():
+    """Base de datos PostgreSQL de pruebas, vacía y con todas las migraciones aplicadas."""
+    from app.core.config import settings
+
+    url = os.getenv("TEST_DATABASE_URL")
+    if not url:
+        pytest.skip("Define TEST_DATABASE_URL para las pruebas con base de datos")
+    original = settings.database_url
+    settings.database_url = url
+    reiniciar_base_de_datos(url)
+    yield url
+    settings.database_url = original

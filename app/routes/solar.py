@@ -1,73 +1,73 @@
+from datetime import date, timedelta
+
 from fastapi import APIRouter, HTTPException, Request
 
 from app.core.security import is_admin_role
-
 from app.schemas.solar import CalculoCrear
-from app.services.solar_service import create_calculo, delete_calculo, list_calculos, report_general, update_calculo
-
+from app.services.servicio_calculos import (
+    crear_calculo,
+    eliminar_calculo,
+    estadisticas_mensuales,
+    listar_calculos,
+    reporte_general,
+)
 
 router = APIRouter(prefix="/calculos", tags=["Calculos"])
 
 
+def credenciales(request: Request) -> dict:
+    return getattr(request.state, "auth", {}) or {}
+
+
 @router.get("")
-async def get_calculos(request: Request):
-    # El administrador ve todos los cálculos; un usuario normal solo los suyos.
-    auth = getattr(request.state, "auth", {}) or {}
+async def obtener_calculos(request: Request):
+    datos = credenciales(request)
     try:
-        if is_admin_role(auth.get("role")):
-            return list_calculos()
-        return list_calculos(email=auth.get("email"))
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        if is_admin_role(datos.get("role")):
+            return listar_calculos()
+        return listar_calculos(correo=datos.get("email"))
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
 
 
 @router.post("")
-async def insert_calculo_v2(calculo: CalculoCrear):
+async def guardar_calculo(calculo: CalculoCrear, request: Request):
+    datos = credenciales(request)
     try:
-        return create_calculo(calculo)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-
-@router.put("/{calculo_id}")
-async def update_calculo_route(
-    calculo_id: int,
-    usuario_id: int,
-    panel_id: int,
-    inversor_id: int,
-    bateria_id: int,
-    paneles_necesarios: int,
-    inversor_kw: float,
-    bateria_kwh: float,
-    costo_total: float,
-):
-    try:
-        return update_calculo(
-            calculo_id,
-            usuario_id,
-            panel_id,
-            inversor_id,
-            bateria_id,
-            paneles_necesarios,
-            inversor_kw,
-            bateria_kwh,
-            costo_total,
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-
-@router.delete("/{calculo_id}")
-async def delete_calculo_route(calculo_id: int):
-    try:
-        return delete_calculo(calculo_id)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        return crear_calculo(calculo, datos.get("email"), is_admin_role(datos.get("role")))
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
 
 
 @router.get("/reporte")
-async def reporte_general_route():
+async def obtener_reporte():
     try:
-        return report_general()
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        return reporte_general()
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+
+
+@router.get("/estadisticas")
+async def obtener_estadisticas(desde: date | None = None, hasta: date | None = None):
+    hasta = hasta or date.today()
+    desde = desde or (hasta - timedelta(days=365))
+    try:
+        return estadisticas_mensuales(desde, hasta)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+
+
+@router.delete("/{calculo_id}")
+async def borrar_calculo(calculo_id: int, request: Request):
+    if not is_admin_role(credenciales(request).get("role")):
+        raise HTTPException(status_code=403, detail="Solo el administrador puede eliminar cálculos")
+    try:
+        return eliminar_calculo(calculo_id)
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error

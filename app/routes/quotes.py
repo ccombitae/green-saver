@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException
 
 from app.schemas.quotes import QuoteAcceptRequest, QuoteSendRequest
-from app.services.quote_service import (
-    accept_quote,
-    list_quote_calculations,
-    list_quote_options,
-    list_sent_quotes,
-    send_quote,
+from app.services.servicio_cotizaciones import (
+    aceptar_cotizacion,
+    calculos_cotizables,
+    enviar_cotizacion,
+    listar_cotizaciones,
+    opciones_de_cotizacion,
 )
 
 router = APIRouter(prefix="/quotes", tags=["quotes"])
@@ -14,23 +14,23 @@ router = APIRouter(prefix="/quotes", tags=["quotes"])
 
 @router.get("/calculations")
 def get_quote_calculations():
-    return {"success": True, "data": list_quote_calculations()}
+    return {"success": True, "data": calculos_cotizables()}
 
 
 @router.get("/options")
 def get_quote_options():
-    return {"success": True, "data": list_quote_options()}
+    return {"success": True, "data": opciones_de_cotizacion()}
 
 
 @router.get("")
 def get_sent_quotes():
-    return {"success": True, "data": list_sent_quotes()}
+    return {"success": True, "data": listar_cotizaciones()}
 
 
 @router.post("/send")
 def post_send_quote(payload: QuoteSendRequest):
     try:
-        data = send_quote(payload)
+        data = enviar_cotizacion(payload)
         message = "Cotizacion enviada correctamente"
         if data.get("status") != "sent":
             message = "Cotizacion guardada, pero no se pudo enviar el correo"
@@ -44,7 +44,7 @@ def post_send_quote(payload: QuoteSendRequest):
 @router.post("/{quote_id}/accept")
 def post_accept_quote(quote_id: int, payload: QuoteAcceptRequest):
     try:
-        data = accept_quote(quote_id, payload.installDate)
+        data = aceptar_cotizacion(quote_id, payload.installDate)
         return {"success": True, "message": "Cotizacion aceptada y sistema guardado", "data": data}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

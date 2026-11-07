@@ -1,38 +1,37 @@
 from fastapi import APIRouter, HTTPException
 
-from app.services.user_service import create_user, delete_user, list_users, update_user
-
+from app.services.servicio_usuarios import ConflictoDeVersion, actualizar_usuario, eliminar_usuario, listar_usuarios
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 
 @router.get("")
-async def get_usuarios():
+async def obtener_usuarios():
     try:
-        return list_users()
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        return listar_usuarios()
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
 
 
-@router.post("")
-async def insert_usuario(nombre: str, ciudad: str, consumo_mensual: float):
+@router.put("/{usuario_id}")
+async def modificar_usuario(
+    usuario_id: int, nombre: str, consumo_mensual: float, ciudad: str | None = None, version: int | None = None
+):
     try:
-        return create_user(nombre, ciudad, consumo_mensual)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        return actualizar_usuario(usuario_id, nombre, ciudad, consumo_mensual, version)
+    except ConflictoDeVersion as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
 
 
-@router.put("/{user_id}")
-async def update_usuario(user_id: int, nombre: str, ciudad: str, consumo_mensual: float):
+@router.delete("/{usuario_id}")
+async def borrar_usuario(usuario_id: int):
     try:
-        return update_user(user_id, nombre, ciudad, consumo_mensual)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-
-@router.delete("/{user_id}")
-async def delete_usuario(user_id: int):
-    try:
-        return delete_user(user_id)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        return eliminar_usuario(usuario_id)
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error

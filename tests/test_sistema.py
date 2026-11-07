@@ -14,18 +14,15 @@ Sin TEST_DATABASE_URL estas pruebas se omiten (skip).
 """
 
 import os
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.core.config import settings
 from app.main import app
 
 TEST_DB = os.getenv("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not TEST_DB, reason="Define TEST_DATABASE_URL para la prueba de sistema")
 
-SCHEMA = Path(__file__).resolve().parents[1] / "app" / "db" / "schema.sql"
 USUARIO = {"name": "Ana Prueba", "phone": "3001234567", "email": "ana.sistema@prueba.com", "password": "Clave123*"}
 MATERIALES = {
     "panelType": "Monocristalino 550W",
@@ -36,17 +33,9 @@ MATERIALES = {
 
 
 @pytest.fixture(scope="module")
-def ctx():
-    """Base de datos limpia + cliente HTTP. Comparte estado entre los pasos del flujo."""
-    import psycopg2
-
-    original = settings.database_url
-    settings.database_url = TEST_DB
-    with psycopg2.connect(TEST_DB) as conn, conn.cursor() as cur:
-        cur.execute("DROP TABLE IF EXISTS cotizaciones, sistemas_instalados, calculos_sistema, usuarios CASCADE")
-        cur.execute(SCHEMA.read_text(encoding="utf-8"))
+def ctx(base_de_datos):
+    """Base de datos limpia (migraciones de Alembic) + cliente HTTP. Comparte estado entre los pasos del flujo."""
     yield {"c": TestClient(app)}
-    settings.database_url = original
 
 
 def bearer(token):
@@ -130,9 +119,9 @@ def test_cp10_usuario_no_accede_a_rutas_de_administrador(ctx):
 
 
 def test_cp11_login_de_administrador(ctx):
-    from app.services.auth_service import ADMIN_EMAIL, ADMIN_PASSWORD
+    from app.services.servicio_autenticacion import CONTRASENA_ADMINISTRADOR, CORREO_ADMINISTRADOR
 
-    r = ctx["c"].post("/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+    r = ctx["c"].post("/auth/login", json={"email": CORREO_ADMINISTRADOR, "password": CONTRASENA_ADMINISTRADOR})
     assert r.status_code == 200 and r.json()["role"] == "admin"
     ctx["admin"] = r.json()["access_token"]
 

@@ -99,7 +99,7 @@ def test_errores_500_no_exponen_detalles_internos(monkeypatch):
     def falla(*args, **kwargs):
         raise RuntimeError('connection to server at "db.interna" failed for user "gsadmin"')
 
-    monkeypatch.setattr(auth_routes, "register_user", falla)
+    monkeypatch.setattr(auth_routes, "registrar_usuario", falla)
     respuesta = cliente.post(
         "/auth/register",
         json={"name": "Ana", "email": "ana@example.com", "phone": "3001234567", "password": "Clave1234"},
@@ -110,14 +110,14 @@ def test_errores_500_no_exponen_detalles_internos(monkeypatch):
 
 def test_admin_no_entra_con_la_contrasena_de_la_semilla(monkeypatch):
     """admin/admin no debe funcionar cuando ADMIN_PASSWORD es otra (B-11)."""
-    from app.services import auth_service
+    from app.services import servicio_autenticacion
 
-    monkeypatch.setattr(auth_service, "ADMIN_PASSWORD", "OtraClaveSegura123")
+    monkeypatch.setattr(servicio_autenticacion, "CONTRASENA_ADMINISTRADOR", "OtraClaveSegura123")
 
     def no_debe_consultar_bd():
         raise AssertionError("el login del administrador no debe leer la tabla")
 
-    monkeypatch.setattr(auth_service, "db_cursor", no_debe_consultar_bd)
+    monkeypatch.setattr(servicio_autenticacion, "sesion_lectura", no_debe_consultar_bd)
     respuesta = cliente.post("/auth/login", json={"email": "admin@greensaver.com", "password": "admin"})
     assert respuesta.status_code == 401
     respuesta = cliente.post("/auth/login", json={"email": "admin@greensaver.com", "password": "OtraClaveSegura123"})

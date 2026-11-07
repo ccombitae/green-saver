@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import settings
-from app.db.init_db import init_db_if_enabled
+from app.db.migrar import migrar_si_esta_habilitado
 from app.core.security import decode_bearer_token, forbidden_response, is_admin_role, unauthorized_response
 from app.routes.auth import router as auth_router
 from app.routes.ml import router as ml_router
@@ -52,13 +52,16 @@ AUTH_REQUIRED_PREFIXES = (
     "/usuarios",
     "/quotes",
     "/systems",
+    "/ml/estimaciones",
 )
 
 ADMIN_ONLY_PREFIXES = (
     "/usuarios",
     "/quotes",
     "/calculos/reporte",
+    "/calculos/estadisticas",
     "/systems/assign",
+    "/ml/estimaciones/estadisticas",
 )
 
 
@@ -111,7 +114,7 @@ app.include_router(ml_router)
 
 @app.on_event("startup")
 def crear_tablas():
-    init_db_if_enabled()
+    migrar_si_esta_habilitado()
 
 
 @app.get("/")
