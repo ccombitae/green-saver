@@ -1,0 +1,25 @@
+
+=== 1. Dos sesiones suman 50 kWh al mismo usuario (SIN BLOQUEO) ===
+[ 0.01 s] Sesión A  lee consumo = 100.00
+[ 0.12 s] Sesión B  lee consumo = 100.00
+[ 0.12 s] Sesión B  escribe 150.00 y hace COMMIT
+[ 0.62 s] Sesión A  escribe 150.00 y hace COMMIT
+Resultado final: 150.00 (esperado 200) -> ¡se perdió una actualización!
+
+=== 1. Dos sesiones suman 50 kWh al mismo usuario (CON SELECT ... FOR UPDATE) ===
+[ 0.63 s] Sesión A  lee consumo = 100.00
+[ 1.23 s] Sesión A  escribe 150.00 y hace COMMIT
+[ 1.23 s] Sesión B  lee consumo = 150.00
+[ 1.23 s] Sesión B  escribe 200.00 y hace COMMIT
+Resultado final: 200.00 (esperado 200) -> correcto
+
+=== 2. Dos administradores aceptan la misma cotización (procedimiento con FOR UPDATE) ===
+[ 1.25 s] Admin A   aceptó la cotización (transacción abierta, fila bloqueada)
+[ 1.25 s] Admin B   CALL aceptar_cotizacion(...) -> espera el bloqueo de la fila
+[ 2.25 s] Admin A   COMMIT -> libera el bloqueo
+[ 2.25 s] Admin B   ERROR -> La cotización 1 ya fue aceptada (ROLLBACK)
+Auditoría (trigger): [(None, 'sent'), ('sent', 'accepted')]
+
+=== 3. Lectura no repetible según el nivel de aislamiento ===
+READ COMMITTED   primera lectura = 200.00, segunda lectura = 201.00 -> lectura no repetible
+REPEATABLE READ  primera lectura = 201.00, segunda lectura = 201.00 -> la transacción ve una foto estable

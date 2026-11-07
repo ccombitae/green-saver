@@ -1,0 +1,121 @@
+digraph modelo_er {
+  graph [rankdir=LR, fontname="Arial", nodesep=0.35, ranksep=0.7, bgcolor="white", pad=0.3];
+  node [shape=plain, fontname="Arial", fontsize=10];
+  edge [fontname="Arial", fontsize=9, color="#4B5563", arrowhead=crow, arrowtail=none, dir=both, arrowsize=0.7];
+
+  departamentos [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#E6F6EE" colspan="2"><b>departamentos</b></td></tr>
+    <tr><td>PK</td><td align="left" port="id">id</td></tr>
+    <tr><td></td><td align="left">nombre UNIQUE</td></tr></table>>];
+
+  ciudades [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#E6F6EE" colspan="2"><b>ciudades</b></td></tr>
+    <tr><td>PK</td><td align="left" port="id">id</td></tr>
+    <tr><td></td><td align="left">codigo UNIQUE</td></tr>
+    <tr><td></td><td align="left">nombre</td></tr>
+    <tr><td port="dep">FK</td><td align="left">departamento_id</td></tr>
+    <tr><td></td><td align="left">latitud, longitud</td></tr></table>>];
+
+  roles [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#E6F6EE" colspan="2"><b>roles</b></td></tr>
+    <tr><td>PK</td><td align="left" port="id">id</td></tr>
+    <tr><td></td><td align="left">codigo UNIQUE, nombre</td></tr></table>>];
+
+  usuarios [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#023A22" colspan="2"><font color="white"><b>usuarios</b></font></td></tr>
+    <tr><td>PK</td><td align="left" port="id">id</td></tr>
+    <tr><td></td><td align="left">nombre</td></tr>
+    <tr><td></td><td align="left">correo UNIQUE · CHECK minúsculas</td></tr>
+    <tr><td></td><td align="left">telefono, contrasena_hash</td></tr>
+    <tr><td port="rol">FK</td><td align="left">rol_id</td></tr>
+    <tr><td port="ciu">FK</td><td align="left">ciudad_id</td></tr>
+    <tr><td></td><td align="left">consumo_mensual_kwh · CHECK ≥ 0</td></tr>
+    <tr><td></td><td align="left">version (bloqueo optimista)</td></tr>
+    <tr><td></td><td align="left">creado_en, actualizado_en</td></tr></table>>];
+
+  calculos [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#023A22" colspan="2"><font color="white"><b>calculos</b></font></td></tr>
+    <tr><td>PK</td><td align="left" port="id">id</td></tr>
+    <tr><td port="usu">FK</td><td align="left">usuario_id (SET NULL)</td></tr>
+    <tr><td port="ciu">FK</td><td align="left">ciudad_id</td></tr>
+    <tr><td></td><td align="left">consumo_mensual_kwh, paneles</td></tr>
+    <tr><td></td><td align="left">cobertura_pct, ahorro_estimado_cop</td></tr>
+    <tr><td></td><td align="left">recomendacion</td></tr>
+    <tr><td></td><td align="left">estimacion_id → MongoDB</td></tr>
+    <tr><td></td><td align="left">creado_en</td></tr></table>>];
+
+  estados_cotizacion [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#E6F6EE" colspan="2"><b>estados_cotizacion</b></td></tr>
+    <tr><td>PK</td><td align="left" port="id">id</td></tr>
+    <tr><td></td><td align="left">codigo UNIQUE, nombre</td></tr></table>>];
+
+  cotizaciones [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#023A22" colspan="2"><font color="white"><b>cotizaciones</b></font></td></tr>
+    <tr><td>PK</td><td align="left" port="id">id</td></tr>
+    <tr><td port="cal">FK</td><td align="left">calculo_id (CASCADE)</td></tr>
+    <tr><td port="cli">FK</td><td align="left">cliente_id (CASCADE)</td></tr>
+    <tr><td port="est">FK</td><td align="left">estado_id</td></tr>
+    <tr><td></td><td align="left">precio_total, notas</td></tr>
+    <tr><td></td><td align="left">enviada_en, aceptada_en</td></tr>
+    <tr><td></td><td align="left">fecha_instalacion (DATE)</td></tr>
+    <tr><td></td><td align="left">version</td></tr></table>>];
+
+  detalle_cotizacion [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#E3EEFB" colspan="2"><b>detalle_cotizacion</b></td></tr>
+    <tr><td port="cot">PK, FK</td><td align="left">cotizacion_id</td></tr>
+    <tr><td port="equ">PK, FK</td><td align="left">equipo_id</td></tr>
+    <tr><td></td><td align="left">cantidad · CHECK &gt; 0</td></tr>
+    <tr><td></td><td align="left">precio_unitario_cop (histórico)</td></tr></table>>];
+
+  tipos_equipo [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#E6F6EE" colspan="2"><b>tipos_equipo</b></td></tr>
+    <tr><td>PK</td><td align="left" port="id">id</td></tr>
+    <tr><td></td><td align="left">codigo UNIQUE, nombre</td></tr></table>>];
+
+  equipos [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#023A22" colspan="2"><font color="white"><b>equipos</b></font></td></tr>
+    <tr><td>PK</td><td align="left" port="id">id</td></tr>
+    <tr><td port="tip">FK</td><td align="left">tipo_equipo_id</td></tr>
+    <tr><td></td><td align="left">nombre UNIQUE</td></tr>
+    <tr><td></td><td align="left">potencia_w, capacidad_kwh</td></tr>
+    <tr><td></td><td align="left">precio_referencia_cop, activo</td></tr></table>>];
+
+  sistemas_instalados [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#023A22" colspan="2"><font color="white"><b>sistemas_instalados</b></font></td></tr>
+    <tr><td>PK</td><td align="left" port="id">id</td></tr>
+    <tr><td port="usu">FK</td><td align="left">usuario_id UNIQUE (CASCADE)</td></tr>
+    <tr><td port="cot">FK</td><td align="left">cotizacion_id UNIQUE</td></tr>
+    <tr><td></td><td align="left">potencia_kwp, fecha_instalacion</td></tr>
+    <tr><td></td><td align="left">creado_en, actualizado_en</td></tr></table>>];
+
+  equipos_sistema [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#E3EEFB" colspan="2"><b>equipos_sistema</b></td></tr>
+    <tr><td port="sis">PK, FK</td><td align="left">sistema_id</td></tr>
+    <tr><td port="equ">PK, FK</td><td align="left">equipo_id</td></tr>
+    <tr><td></td><td align="left">cantidad · CHECK &gt; 0</td></tr></table>>];
+
+  auditoria [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td bgcolor="#FDECEC" colspan="2"><b>auditoria_cotizaciones</b></td></tr>
+    <tr><td>PK</td><td align="left">id</td></tr>
+    <tr><td></td><td align="left">cotizacion_id</td></tr>
+    <tr><td></td><td align="left">estado_anterior, estado_nuevo</td></tr>
+    <tr><td></td><td align="left">cambiado_en, usuario_bd</td></tr>
+    <tr><td colspan="2"><i>la llena el trigger</i></td></tr></table>>];
+
+  departamentos:id:e -> ciudades:dep:w;
+  ciudades:id:e -> usuarios:ciu:w;
+  roles:id:e -> usuarios:rol:w;
+  usuarios:id:e -> calculos:usu:w;
+  ciudades:id:e -> calculos:ciu:w;
+  calculos:id:e -> cotizaciones:cal:w;
+  usuarios:id:e -> cotizaciones:cli:w;
+  estados_cotizacion:id:e -> cotizaciones:est:w;
+  cotizaciones:id:e -> detalle_cotizacion:cot:w;
+  equipos:id:e -> detalle_cotizacion:equ:w;
+  tipos_equipo:id:e -> equipos:tip:w;
+  usuarios:id:e -> sistemas_instalados:usu:w [arrowhead=teeodot];
+  cotizaciones:id:e -> sistemas_instalados:cot:w [arrowhead=teeodot];
+  sistemas_instalados:id:e -> equipos_sistema:sis:w;
+  equipos:id:e -> equipos_sistema:equ:w;
+  cotizaciones:id:e -> auditoria:w [style=dashed, arrowhead=crow, color="#B91C1C"];
+}

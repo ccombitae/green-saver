@@ -32,6 +32,9 @@ Configura estas variables en Render o en tu entorno local:
 
 ```env
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/greensaver
+MONGO_URL=mongodb+srv://USER:PASSWORD@HOST/   # opcional: guarda cada estimación en MongoDB
+MONGO_BD=green_saver
+INIT_DB=true                                   # aplica las migraciones al arrancar
 APP_NAME=Green Saver API
 APP_VERSION=1.0.0
 CORS_ORIGINS=*
@@ -114,7 +117,9 @@ La carpeta `backend/` original se conserva solo como referencia historica. El pu
 
 ## Base de datos
 
-Ejecuta `app/db/schema.sql` en tu servidor PostgreSQL de Render para crear las tablas iniciales.
+El esquema se crea y actualiza con migraciones de Alembic: `alembic upgrade head` (con `DATABASE_URL` definida),
+o automáticamente al arrancar la API si `INIT_DB=true`. El modelo normalizado, el ORM, las transacciones, los índices,
+el procedimiento, los triggers y la parte de MongoDB están documentados en [`bd/README.md`](bd/README.md).
 
 ## Prueba exacta de extremo a extremo
 
