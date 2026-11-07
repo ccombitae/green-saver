@@ -9,12 +9,14 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     Numeric,
     SmallInteger,
     String,
     Text,
     func,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -115,6 +117,14 @@ class Calculo(Base):
         CheckConstraint("cobertura_pct >= 0", name="ck_calculos_cobertura"),
         CheckConstraint("ahorro_estimado_cop >= 0", name="ck_calculos_ahorro"),
         CheckConstraint("estimacion_id IS NULL OR estimacion_id ~ '^[0-9a-f]{24}$'", name="ck_calculos_estimacion"),
+        Index(
+            "ix_calculos_usuario_fecha",
+            "usuario_id",
+            text("creado_en DESC"),
+            postgresql_include=["consumo_mensual_kwh", "paneles", "cobertura_pct", "ahorro_estimado_cop"],
+        ),
+        Index("ix_calculos_creado_en", "creado_en"),
+        Index("ix_calculos_ciudad_id", "ciudad_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
@@ -143,7 +153,10 @@ class EstadoCotizacion(Base):
 
 class Cotizacion(Base):
     __tablename__ = "cotizaciones"
-    __table_args__ = (CheckConstraint("precio_total >= 0", name="ck_cotizaciones_precio"),)
+    __table_args__ = (
+        CheckConstraint("precio_total >= 0", name="ck_cotizaciones_precio"),
+        Index("ix_cotizaciones_estado_enviada", "estado_id", text("enviada_en DESC")),
+    )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     calculo_id: Mapped[int] = mapped_column(ForeignKey("calculos.id", ondelete="CASCADE"), index=True)
