@@ -7,6 +7,20 @@ y triggers, y NoSQL con arquitectura híbrida.
 El motor relacional es **PostgreSQL 16**, que ya usa Green Saver en Azure. Las clases usaron MySQL (Sakila);
 al final de cada sección se indica la equivalencia en MySQL.
 
+## Requisitos del profesor y dónde se cumplen
+
+| Punto | Requisito | Cómo se cumple en Green Saver | Sección |
+|---|---|---|---|
+| 1 | Conectividad backend (ORM) | SQLAlchemy 2.0 con pool de conexiones, sesiones transaccionales y migraciones con Alembic | 2 |
+| 1 | Fundamentos de transacciones con usuarios simultáneos | Cotización atómica, procedimiento con COMMIT/ROLLBACK, 20 administradores aceptando la misma cotización a la vez | 3 y 4 |
+| 1 | Control de concurrencia: bloqueos y lecturas sucias | FOR UPDATE, bloqueo optimista (409), interbloqueo detectado y reintento automático, lectura sucia, lectura no repetible y actualización perdida demostradas | 3 |
+| 2 | Optimización: tiempos, redundancias y complejidad | EXPLAIN ANALYZE antes y después, normalización a 3FN, consultas sargables, O(n) → O(log n) y N+1 → 2 consultas | 1 y 5 |
+| 2 | Indexación avanzada | Índices compuestos, cubriente (INCLUDE), en llaves foráneas, medidos sobre 600.000 filas | 5 |
+| 3 | NoSQL: colecciones y documentos, ventajas y limitaciones | Colección `estimaciones` en MongoDB, índices, agregaciones y comparación con el modelo relacional | 6 |
+| 3 | Arquitectura híbrida | PostgreSQL para lo transaccional, MongoDB para los documentos de estimación, enlazados por `estimacion_id` | 6 |
+
+## Archivos
+
 | Tema | Dónde está |
 |---|---|
 | Modelo normalizado (3FN) | `app/db/modelos.py`, `app/db/migraciones/versiones/0001_esquema_normalizado.py`, `bd/diagramas/modelo_er.png` |
@@ -14,7 +28,7 @@ al final de cada sección se indica la equivalencia en MySQL.
 | Migraciones (Alembic) | `app/db/migraciones/`, `alembic.ini`, `app/db/migrar.py` |
 | Procedimiento, triggers y función | `app/db/migraciones/versiones/0002_procedimientos_y_triggers.py` |
 | Índices | `app/db/migraciones/versiones/0003_indices_optimizacion.py` |
-| Medición con EXPLAIN ANALYZE | `bd/rendimiento/` (`cargar_datos.sql`, `medir.py`, `resultados.md`) |
+| Medición con EXPLAIN ANALYZE y del problema N+1 | `bd/rendimiento/` (`cargar_datos.sql`, `medir.py`, `resultados.md`, `n_mas_1.py`) |
 | Demostraciones de concurrencia | `bd/demostraciones/concurrencia.py` y su salida `salida_concurrencia.txt` |
 | MongoDB (arquitectura híbrida) | `app/db/documentos.py`, `app/routes/ml.py`, `bd/mongo/consultas.js` |
 | Pruebas automatizadas | `tests/test_base_de_datos.py`, `tests/test_migracion_legado.py`, `tests/test_mongo.py`, `tests/test_sistema.py` |
@@ -125,6 +139,9 @@ los triggers, que están escritos en PL/pgSQL.
 | Dos administradores aceptan la misma cotización al mismo tiempo (como el reto del "último boleto") | Bloqueo pesimista `SELECT … FOR UPDATE` dentro del procedimiento | `aceptar_cotizacion` |
 | Dos administradores editan el mismo usuario | Bloqueo optimista con columna `version` (`version_id_col` del ORM); la API responde **409** | `servicio_usuarios.actualizar_usuario` |
 | Lectura no repetible | Nivel de aislamiento `REPEATABLE READ` | Prueba y demostración |
+| Lectura sucia | PostgreSQL nunca la permite, ni siquiera con `READ UNCOMMITTED` | Prueba y demostración |
+| Interbloqueo (deadlock) | El motor lo detecta en ~1 s y aborta una transacción víctima (error 40P01); la API la reintenta con espera exponencial (`ejecutar_con_reintentos`) | `app/db/database.py`, prueba y demostración |
+| Muchos usuarios a la vez | 20 hilos aceptan la misma cotización: 1 la acepta, 19 reciben "ya fue aceptada" y la auditoría registra un solo cambio | Prueba y demostración |
 
 Salida real de `python bd/demostraciones/concurrencia.py <url>`:
 
@@ -138,7 +155,22 @@ Admin B   ERROR -> La cotización 1 ya fue aceptada (ROLLBACK)
 === 3. Lectura no repetible según el nivel de aislamiento ===
 READ COMMITTED   primera lectura = 200.00, segunda lectura = 201.00 -> lectura no repetible
 REPEATABLE READ  primera lectura = 201.00, segunda lectura = 201.00 -> la transacción ve una foto estable
+=== 4. Lectura sucia: otra sesión intenta leer un cambio sin COMMIT ===
+Sesión A  UPDATE consumo = 0 (todavía sin COMMIT)
+Sesión B  READ UNCOMMITTED lee consumo = 202.00 (no ve el 0)
+=== 5. Interbloqueo (deadlock): dos sesiones bloquean filas en orden contrario ===
+Sesión A  ERROR 40P01 deadlock detected -> es la víctima (ROLLBACK); la API reintenta
+Sesión B  COMMIT
+=== 6. Veinte administradores aceptan la misma cotización al mismo tiempo ===
+Aceptadas: 1 · rechazadas por 'ya fue aceptada': 19 · tiempo total 0.06 s
 ```
+
+La salida completa está en `demostraciones/salida_concurrencia.txt`.
+
+**Cómo se evitan los interbloqueos en el código:**
+- cada transacción es corta;
+- el procedimiento bloquea primero la cotización y después escribe en las demás tablas, siempre en el mismo orden;
+- si aun así el motor elige una víctima, `ejecutar_con_reintentos` repite la operación hasta 3 veces, esperando 50, 100 y 200 ms. Solo reintenta los errores 40P01 (interbloqueo) y 40001 (fallo de serialización); cualquier otro error se devuelve de inmediato.
 
 **Diferencias con MySQL que conviene saber:**
 - **Nivel por defecto.** En PostgreSQL es `READ COMMITTED`; en MySQL InnoDB es `REPEATABLE READ`.
@@ -199,6 +231,16 @@ del usuario se responde sin leer la tabla (`Index Only Scan`, 4 bloques en lugar
 Con los índices ya creados, las versiones con funciones siguieron haciendo `Seq Scan`. Es el mismo fenómeno de la
 exposición del Grupo 2: el índice existe, pero el motor no puede usarlo.
 
+**Complejidad: el problema N+1 del ORM.** Si las relaciones se cargan de forma perezosa, listar N cotizaciones
+hace 1 consulta para la lista y otra por cada cotización para su cliente, su estado y su detalle. Con
+`lazy="joined"` para cliente y estado, y `lazy="selectin"` para el detalle, el número de consultas queda fijo.
+Medición con `bd/rendimiento/n_mas_1.py` sobre 500 cotizaciones:
+
+| Estrategia | Consultas | Tiempo |
+|---|---|---|
+| Carga perezosa (N+1) | 978 | 522 ms |
+| `joined` + `selectin` (la que usa Green Saver) | 2 | 15 ms |
+
 **Costo de los índices.** Ocupan 34 MB (`ix_calculos_usuario_fecha`) y 13 MB (`ix_calculos_creado_en`) para
 600.000 cálculos, y hacen un poco más lentas las inserciones. Se justifican porque las lecturas son mucho más
 frecuentes que las escrituras.
@@ -256,6 +298,24 @@ En un servidor real, el equivalente al *slow query log* de MySQL es `log_min_dur
 
 Una prueba verifica con `explain()` que la consulta por ciudad use `ix_ciudad_fecha`.
 
+**Ventajas y limitaciones frente al modelo relacional, en Green Saver:**
+
+| Aspecto | PostgreSQL (relacional) | MongoDB (documentos) | Decisión |
+|---|---|---|---|
+| Esquema | Fijo, validado con tipos, CHECK y llaves foráneas | Flexible: cada documento puede traer campos distintos | El resultado de la estimación cambia cuando el modelo agrega datos; va en MongoDB |
+| Lectura de un objeto completo | Requiere JOIN entre varias tablas | Un documento trae todo en una sola lectura | La estimación se muestra completa; va en MongoDB |
+| Relaciones e integridad | Llaves foráneas, CASCADE y RESTRICT | No hay llaves foráneas; las referencias se validan en la aplicación | Usuarios, cotizaciones y sistemas dependen unos de otros; van en PostgreSQL |
+| Transacciones | ACID entre muchas tablas | ACID por documento; entre documentos, con costo | Dinero y estados de cotización van en PostgreSQL |
+| Consultas analíticas | SQL, funciones y vistas | Agregaciones (`$group`, `$unwind`) | Las dos: estadísticas mensuales en SQL y por ciudad en MongoDB |
+| Escalado | Vertical y réplicas de lectura | Horizontal con *sharding* | Con el volumen actual no hace falta; las estimaciones son lo que más crece |
+| Duplicación de datos | Mínima (normalización) | Frecuente (desnormalización) | El documento copia nombre y latitud de la ciudad; es aceptable porque es una foto del momento de la estimación |
+
+**Consistencia entre los dos motores.**
+- Escribir en PostgreSQL y en MongoDB no es una sola transacción.
+- Por eso cada dato tiene un solo dueño: MongoDB es la fuente de verdad de la estimación, y PostgreSQL solo guarda su `estimacion_id`.
+- Si la escritura en MongoDB falla, la estimación igual se responde (`estimacion_id: null`) y el cálculo se guarda sin enlace. Nunca queda una cotización o un pago a medias.
+- Se descartaron dos alternativas más complejas, la escritura dual con tabla *outbox* y la captura de cambios (CDC, como en la exposición del Grupo 3), porque aquí no hay que sincronizar el mismo dato en los dos motores.
+
 **Endpoints nuevos:**
 
 | Endpoint | Para quién | Qué hace |
@@ -286,13 +346,13 @@ python -m pytest -q
 
 | Archivo | Pruebas | Qué verifica |
 |---|---|---|
-| `test_base_de_datos.py` | 15 | `CHECK`, llaves foráneas, triggers de validación y auditoría, el procedimiento (y que revierte todo si falla), dos administradores en paralelo, bloqueo optimista y respuesta 409, niveles de aislamiento, atomicidad de la cotización y la función de estadísticas |
+| `test_base_de_datos.py` | 20 | `CHECK`, llaves foráneas, triggers de validación y auditoría, el procedimiento (y que revierte todo si falla), dos y veinte administradores en paralelo, bloqueo optimista y respuesta 409, niveles de aislamiento, lectura sucia, interbloqueo y reintento, atomicidad de la cotización y la función de estadísticas |
 | `test_migracion_legado.py` | 7 | Que los datos del modelo anterior lleguen bien al nuevo |
 | `test_mongo.py` | 6 | Documento guardado, agregación por ciudad, uso del índice y funcionamiento sin MongoDB |
 | `test_sistema.py` | 18 | El flujo completo de la API con la base nueva, sin cambios para la app y la web |
 | Resto | 48 | Pruebas unitarias y de API que ya existían |
 
-**Total:** 94 pruebas, todas aprobadas. En GitHub Actions corren con PostgreSQL 16 y MongoDB 7 como servicios, antes de cada despliegue.
+**Total:** 99 pruebas, todas aprobadas. En GitHub Actions corren con PostgreSQL 16 y MongoDB 7 como servicios, antes de cada despliegue.
 
 ---
 

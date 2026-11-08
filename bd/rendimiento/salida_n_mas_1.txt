@@ -1,0 +1,3 @@
+Listar 500 cotizaciones con su cliente, estado y detalle
+Carga perezosa (N+1): 978 consultas en 522 ms
+joined + selectin:    2 consultas en 15 ms

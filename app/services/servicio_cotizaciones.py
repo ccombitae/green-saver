@@ -4,7 +4,7 @@ from decimal import Decimal
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import DBAPIError
 
-from app.db.database import sesion_lectura, sesion_transaccional
+from app.db.database import ejecutar_con_reintentos, sesion_lectura, sesion_transaccional
 from app.db.modelos import Calculo, Cotizacion, DetalleCotizacion, Equipo, EstadoCotizacion, TipoEquipo, Usuario
 from app.schemas.quotes import QuoteSendRequest
 from app.services.servicio_autenticacion import normalizar_correo
@@ -144,7 +144,7 @@ def cambiar_estado(cotizacion_id: int, codigo: str) -> None:
 
 
 def enviar_cotizacion(datos: QuoteSendRequest) -> dict:
-    registrada = registrar_cotizacion(datos)
+    registrada = ejecutar_con_reintentos(lambda: registrar_cotizacion(datos))
     estado_final, error_envio = "sent", None
     try:
         enviar_correo(
@@ -175,13 +175,16 @@ def aceptar_cotizacion(cotizacion_id: int, fecha_instalacion: str) -> dict:
     except ValueError as error:
         raise ValueError("La fecha de instalación debe tener el formato AAAA-MM-DD") from error
 
-    try:
+    def aceptar() -> tuple[int, int]:
         with sesion_transaccional() as sesion:
-            sistema_id = sesion.execute(
+            sistema = sesion.execute(
                 text("CALL aceptar_cotizacion(:cotizacion, :fecha, NULL)"),
                 {"cotizacion": cotizacion_id, "fecha": fecha},
             ).scalar_one()
-            cliente_id = sesion.scalar(select(Cotizacion.cliente_id).where(Cotizacion.id == cotizacion_id))
+            return sistema, sesion.scalar(select(Cotizacion.cliente_id).where(Cotizacion.id == cotizacion_id))
+
+    try:
+        sistema_id, cliente_id = ejecutar_con_reintentos(aceptar)
     except DBAPIError as error:
         raise ValueError(mensaje_de_error_bd(error)) from error
 

@@ -251,3 +251,117 @@ def test_cotizacion_con_equipo_inexistente_no_deja_nada_a_medias(datos):
 def test_funcion_de_estadisticas_mensuales(datos):
     filas = ejecutar(datos["url"], "SELECT * FROM fn_estadisticas_mensuales(%s, %s)", (HOY - timedelta(days=31), HOY))
     assert sum(f[1] for f in filas) >= 1
+
+
+def test_postgresql_no_permite_lecturas_sucias(datos):
+    escritora = psycopg2.connect(datos["url"])
+    lectora = psycopg2.connect(datos["url"])
+    lectora.set_session(isolation_level="READ UNCOMMITTED")
+    try:
+        with escritora.cursor() as cursor:
+            cursor.execute("SELECT nombre FROM usuarios WHERE id = %s", (datos["beto"],))
+            original = cursor.fetchone()[0]
+            cursor.execute("UPDATE usuarios SET nombre = 'Cambio sin confirmar' WHERE id = %s", (datos["beto"],))
+        with lectora.cursor() as cursor:
+            cursor.execute("SELECT nombre FROM usuarios WHERE id = %s", (datos["beto"],))
+            leido = cursor.fetchone()[0]
+        escritora.rollback()
+    finally:
+        escritora.close()
+        lectora.close()
+    assert leido == original
+
+
+def test_interbloqueo_es_detectado_y_una_transaccion_es_victima(datos):
+    primera = psycopg2.connect(datos["url"])
+    segunda = psycopg2.connect(datos["url"])
+    errores = []
+
+    def actualizar(conexion, orden):
+        try:
+            with conexion.cursor() as cursor:
+                cursor.execute("UPDATE usuarios SET consumo_mensual_kwh = consumo_mensual_kwh + 1 WHERE id = %s", (orden[0],))
+                time.sleep(0.4)
+                cursor.execute("UPDATE usuarios SET consumo_mensual_kwh = consumo_mensual_kwh + 1 WHERE id = %s", (orden[1],))
+            conexion.commit()
+        except psycopg2.errors.DeadlockDetected as error:
+            conexion.rollback()
+            errores.append(error.pgcode)
+
+    try:
+        hilos = [
+            threading.Thread(target=actualizar, args=(primera, (datos["ana"], datos["beto"]))),
+            threading.Thread(target=actualizar, args=(segunda, (datos["beto"], datos["ana"]))),
+        ]
+        for hilo in hilos:
+            hilo.start()
+        for hilo in hilos:
+            hilo.join(timeout=15)
+    finally:
+        primera.close()
+        segunda.close()
+    assert errores == ["40P01"]
+
+
+def test_la_aplicacion_reintenta_despues_de_un_interbloqueo():
+    from sqlalchemy.exc import DBAPIError
+
+    from app.db.database import ejecutar_con_reintentos
+
+    class ErrorDelMotor(Exception):
+        pgcode = "40P01"
+
+    intentos = []
+
+    def operacion():
+        intentos.append(1)
+        if len(intentos) == 1:
+            raise DBAPIError("UPDATE usuarios ...", {}, ErrorDelMotor("deadlock detected"))
+        return "confirmada"
+
+    assert ejecutar_con_reintentos(operacion, espera_inicial=0) == "confirmada"
+    assert len(intentos) == 2
+
+
+def test_un_error_que_no_es_de_concurrencia_no_se_reintenta():
+    from sqlalchemy.exc import DBAPIError
+
+    from app.db.database import ejecutar_con_reintentos
+
+    class ErrorDelMotor(Exception):
+        pgcode = "23514"
+
+    intentos = []
+
+    def operacion():
+        intentos.append(1)
+        raise DBAPIError("INSERT ...", {}, ErrorDelMotor("check violation"))
+
+    with pytest.raises(DBAPIError):
+        ejecutar_con_reintentos(operacion, espera_inicial=0)
+    assert len(intentos) == 1
+
+
+def test_veinte_administradores_aceptan_la_misma_cotizacion_al_tiempo(datos):
+    from app.services.servicio_cotizaciones import aceptar_cotizacion
+
+    cotizacion = nueva_cotizacion(datos["url"], datos["calculo"], datos["beto"])
+    resultados = []
+    salida = threading.Barrier(20)
+
+    def administrador():
+        salida.wait()
+        try:
+            aceptar_cotizacion(cotizacion, HOY.isoformat())
+            resultados.append("aceptada")
+        except ValueError as error:
+            resultados.append(str(error))
+
+    hilos = [threading.Thread(target=administrador) for _ in range(20)]
+    for hilo in hilos:
+        hilo.start()
+    for hilo in hilos:
+        hilo.join(timeout=30)
+    assert resultados.count("aceptada") == 1
+    assert sum("ya fue aceptada" in r for r in resultados) == 19
+    assert ejecutar(datos["url"], "SELECT count(*) FROM auditoria_cotizaciones WHERE cotizacion_id = %s AND estado_nuevo = 'accepted'", (cotizacion,)) == [(1,)]
